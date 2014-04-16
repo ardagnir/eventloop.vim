@@ -27,60 +27,63 @@ command! -nargs=1 ElCmd call s:AddToGroup("<args>")
 
 command! -nargs=1 ElSetting call s:ChangeSetting("<args>")
 
-let g:initiated=0
+let s:initiated=0
 
-let g:groups = {}
-let g:groups["DEFAULT"] = {}
-let g:groups["DEFAULT"].timer = 1
-let g:groups["DEFAULT"].progress = 0
-let g:groups["DEFAULT"].cmds = []
+let s:groups = {}
+let s:groups["DEFAULT"] = {}
+let s:groups["DEFAULT"].timer = 1
+let s:groups["DEFAULT"].progress = 0
+let s:groups["DEFAULT"].cmds = []
 
 function! s:ElGroup(bang, name)
   if a:bang=="!"
-    call DeleteGroup(a:name)
+    call s:DeleteGroup(a:name)
   else
-    call SetGroup(a:name)
+    call s:SetGroup(a:name)
   endif
 endfunction
  
 function! s:SetGroup(name)
-  if g:initiated==0
-    "Calls CallEvents 10 times a second max.
-    silent call system("(while [ $(vim --servername ".v:servername." --remote-expr 'CallEvents()') -eq 1 ]; do sleep .2; done) >/dev/null 2>/dev/null &")
-    let g:initiated=1
+  if s:initiated==0
+    "Calls CallEvents 5 times a second max.
+    silent call system("(while [ $(vim --servername ".v:servername." --remote-expr 'EventLoop_CallEvents()') -eq 1 ]; do sleep .2; done) >/dev/null 2>/dev/null &")
+    let s:initiated=1
   endif
   if a:name=="END"
-    let g:currentGroup = "DEFAULT"
+    let s:currentGroup = "DEFAULT"
     return
   endif
   
-  if !has_key(g:groups, a:name)
-    let g:groups[a:name] = {}
-    let g:groups[a:name].timer=-1
-    let g:groups[a:name].progress=0
-    let g:groups[a:name].cmds=[]
+  if !has_key(s:groups, a:name)
+    let s:groups[a:name] = {}
+    let s:groups[a:name].timer=-1
+    let s:groups[a:name].progress=0
+    let s:groups[a:name].cmds=[]
   endif
-  let g:currentGroup = a:name
+  let s:currentGroup = a:name
 endfunction
 
 function! s:AddToGroup(function)
-  call add(g:groups[g:currentGroup].cmds,a:function)
+  call add(s:groups[s:currentGroup].cmds,a:function)
 endfunction
 
 function! s:DeleteGroup(name)
   if a:name==""
-    let g:groups = {} 
+    let s:groups = {} 
     return
   endif
-  call remove(g:groups, a:name)
+  try
+    call remove(s:groups, a:name)
+  catch
+  endtry
 endfunction
 
-function! s:CallEvents()
-  for group in values(g:groups)
+function! EventLoop_CallEvents()
+  for group in values(s:groups)
     let group.progress += 2
     let timer = group.timer
     if timer == -1
-      let timer = g:groups["DEFAULT"].timer
+      let timer = s:groups["DEFAULT"].timer
     endif
     if group.progress >= timer
       let group.progress = 0
@@ -95,7 +98,7 @@ endfunction
 function! s:ChangeSetting(args)
   let argList=split(a:args," ")
   if argList[0]=="timer"
-    let g:groups[g:currentGroup].timer = argList[1]
+    let s:groups[s:currentGroup].timer = argList[1]
   else
     echoerr "Invalid setting ".argList[0]
   endif
