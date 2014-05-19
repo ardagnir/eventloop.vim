@@ -1,3 +1,4 @@
+
 EventLoop.vim
 ============
 
@@ -22,7 +23,8 @@ This is just an EventLoop framework I built for [pterosaur](https://github.com/a
     ElGroup END
 
 ##Requirements
-- EventLoop requires a unix-based os
+- Vim with +clientserver
+- GNU/Linux or OS X. Probably works on other unix-like systems too.
 
 ##Installation
 Use pathogen.
